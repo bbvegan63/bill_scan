@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#007bff">
+    <link rel="manifest" href="/manifest.json">
+    <title>Electric Bill Scanner</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f6fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 20px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e1e8ed;
+        }
+        
+        .section h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: #34495e;
+            font-size: 18px;
+        }
+        
+        .mobile-upload-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            margin: 10px 0;
+            transition: background 0.3s;
+        }
+        
+        .mobile-upload-btn:hover {
+            background: #2980b9;
+        }
+        
+        .mobile-upload-btn.camera {
+            background: #27ae60;
+        }
+        
+        .mobile-upload-btn.camera:hover {
+            background: #219a52;
+        }
+        
+        .mobile-upload-btn.gallery {
+            background: #9b59b6;
+        }
+        
+        .mobile-upload-btn.gallery:hover {
+            background: #8e44ad;
+        }
+        
+        .hidden-input {
+            display: none;
+        }
+        
+        .preview-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .action-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            margin: 10px 0;
+            transition: background 0.3s;
+        }
+        
+        .action-btn.process {
+            background: #f39c12;
+        }
+        
+        .action-btn.process:hover {
+            background: #e67e22;
+        }
+        
+        .action-btn:hover {
+            background: #c0392b;
+        }
+        
+        .url-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+        
+        .url-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .url-btn {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .result-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .field {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .field-label {
+            font-weight: 600;
+            color: #7f8c8d;
+            flex: 1;
+        }
+        
+        .field-value {
+            flex: 2;
+            text-align: right;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .electric-bill-true {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .electric-bill-false {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #3498db;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-section {
+            background: #ffeaa7;
+            border: 2px solid #fdcb6e;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .camera-warning {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            color: #856404;
+        }
+        
+        .test-btn {
+            background: #7f8c8d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                max-width: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Electric Bill Scanner</h1>
+        
+        <!-- Mobile Upload Section -->
+        <div class="section">
+            <h3>📱 Scan Bill</h3>
+            
+            <div class="camera-warning" id="cameraWarning">
+                💡 <strong>Tip:</strong> For best results, take a clear photo of your electric bill in good lighting
+            </div>
+            
+            <!-- Camera Button -->
+            <button class="mobile-upload-btn camera" onclick="openCamera()">
+                📸 Take Photo
+            </button>
+            
+            <!-- Gallery Button -->
+            <button class="mobile-upload-btn gallery" onclick="openGallery()">
+                🖼️ Choose from Gallery
+            </button>
+            
+            <!-- Hidden file input for gallery -->
+            <input type="file" id="galleryInput" accept="image/*" class="hidden-input" onchange="handleFileSelect(this.files[0])">
+            
+            <!-- Hidden file input for camera (with capture attribute) -->
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden-input" onchange="handleFileSelect(this.files[0])">
+            
+            <!-- Image Preview -->
+            <div class="preview-container" id="previewContainer" style="display: none;">
+                <img id="imagePreview" alt="Bill preview">
+                <button class="action-btn process" onclick="processImage()">
+                    🔍 Process This Image
+                </button>
+                <button class="action-btn" onclick="clearImage()">
+                    ❌ Choose Different Image
+                </button>
+            </div>
+        </div>
+
+        <!-- URL Section -->
+        <div class="section">
+            <h3>🌐 Process from URL</h3>
+            <div class="url-section">
+                <input type="text" class="url-input" id="urlInput" placeholder="Enter image URL...">
+                <button class="url-btn" onclick="processURL()">Process URL</button>
+            </div>
+        </div>
+
+        <!-- Test Section -->
+        <div class="section">
+            <h3>🧪 Test</h3>
+            <button class="test-btn" onclick="testSample()">Test with Sample Bill</button>
+        </div>
+
+        <!-- Results Section -->
+        <div class="result-section" id="result">
+            <h3>📄 Extracted Information</h3>
+            <div class="field">
+                <span class="field-label">Is Electric Bill:</span>
+                <span id="isElectricBill" class="field-value"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Recipient Name:</span>
+                <span id="recipientName" class="field-value"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Recipient Address:</span>
+                <span id="recipientAddress" class="field-value"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Account Number:</span>
+                <span id="accountNumber" class="field-value"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Date of Bill:</span>
+                <span id="dateOfBill" class="field-value"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Amount Due:</span>
+                <span id="amountDue" class="field-value"></span>
+            </div>
+        </div>
+
+        <!-- Error Section -->
+        <div class="error-section" id="error">
+            <h3>❌ Error</h3>
+            <span id="errorMessage"></span>
+        </div>
+
+        <!-- Loading Section -->
+        <div class="loading" id="loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Processing your bill... Please wait.</p>
+        </div>
+    </div>
+
+    <script>
+        let currentFile = null;
+
+        // Mobile-optimized file handling
+        function openCamera() {
+            document.getElementById('cameraInput').click();
+        }
+
+        function openGallery() {
+            document.getElementById('galleryInput').click();
+        }
+
+        function handleFileSelect(file) {
+            if (!file) return;
+            
+            currentFile = file;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('previewContainer').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage() {
+            currentFile = null;
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('cameraInput').value = '';
+            document.getElementById('galleryInput').value = '';
+        }
+
+        async function processImage() {
+            if (!currentFile) {
+                showError('Please select an image first');
+                return;
+            }
+
+            showLoading();
+            
+            const formData = new FormData();
+            formData.append('file', currentFile);
+
+            try {
+                const response = await fetch('/scan', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                showError('Upload failed: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function processURL() {
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/process_url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                showError('URL processing failed: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function testSample() {
+            showLoading();
+            try {
+                const response = await fetch('/test_sample');
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                showError('Test failed: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayResult(data) {
+            if (data.error) {
+                showError(data.error);
+                return;
+            }
+
+            const isElectricBill = document.getElementById('isElectricBill');
+            isElectricBill.textContent = data.is_electric_bill ? 'Yes' : 'No';
+            isElectricBill.className = data.is_electric_bill ? 'field-value electric-bill-true' : 'field-value electric-bill-false';
+
+            document.getElementById('recipientName').textContent = data.recipient_name || 'Not found';
+            document.getElementById('recipientAddress').textContent = data.recipient_address || 'Not found';
+            document.getElementById('accountNumber').textContent = data.account_number || 'Not found';
+            document.getElementById('dateOfBill').textContent = data.date_of_bill || 'Not found';
+            document.getElementById('amountDue').textContent = data.amount_due ? '$' + data.amount_due : 'Not found';
+            
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            
+            // Scroll to results
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            
+            // Scroll to error
+            document.getElementById('error').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // PWA Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // Add some basic analytics
+        console.log('Electric Bill Scanner loaded successfully');
+    </script>
+</body>
+</html>
