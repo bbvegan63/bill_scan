@@ -248,6 +248,20 @@
             width: 100%;
             margin: 5px 0;
         }
+
+        .auth-status {
+            text-align: right;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .auth-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .auth-link:hover {
+            text-decoration: underline;
+        }
         
         @media (min-width: 768px) {
             .container {
@@ -258,6 +272,15 @@
 </head>
 <body>
     <div class="container">
+        <div class="auth-status">
+            {% if is_logged_in %}
+                You are logged in. <a href="{{ url_for('logout') }}" class="auth-link">Logout</a>
+            {% else %}
+                <span style="color: #e74c3c;">You must be logged in to upload.</span> 
+                <a href="{{ url_for('login') }}" class="auth-link">Login Here</a>
+            {% endif %}
+        </div>
+
         <h1>🏠 Electric Bill Scanner</h1>
         
         <!-- Mobile Upload Section -->
@@ -391,6 +414,12 @@
                 showError('Please select an image first');
                 return;
             }
+            
+            // Check for login status on the front-end (for better UX)
+            if (!{{ is_logged_in | lower }}) {
+                showError('You must be logged in to process and upload a file. Please click the "Login Here" link above.');
+                return;
+            }
 
             showLoading();
             
@@ -402,6 +431,14 @@
                     method: 'POST',
                     body: formData
                 });
+                
+                // NEW: Handle 401 Unauthorized status
+                if (response.status === 401) {
+                    showError('Session expired or unauthorized. Please log in again.');
+                    // Optionally, redirect to login page
+                    // window.location.href = "{{ url_for('login') }}";
+                    return;
+                }
                 
                 const result = await response.json();
                 displayResult(result);
