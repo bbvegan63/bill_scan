@@ -166,13 +166,9 @@ def extract_bill_info(text):
         
     return info
 
-def save_to_document_table(original_filename, extracted_data, file_url=None, user_id=None, document_type=None, property_id=None, tenant_id=None, lease_id=None):
+def save_to_document_table(original_filename, extracted_data, file_url=None, user_id=None, document_type=None, property_id=None, tenant_id=None, lease_id=None, utility_id=None): # NEW: utility_id added
     """Save document information to the document table using the standard client (MUST be authenticated for RLS)"""
-    if not supabase: # Use the STANDARD client
-        print("Supabase standard client not available, skipping database insert")
-        return None
-    
-    # CRITICAL: We MUST ensure user_id is set here to match the RLS policy (auth.uid())
+    # ... (Keep existing user_id check) ...
     if not user_id:
         print("Error: User ID is required for RLS-compliant insert.")
         return None
@@ -188,7 +184,8 @@ def save_to_document_table(original_filename, extracted_data, file_url=None, use
             'property_id': property_id,
             'tenant_id': tenant_id,
             'lease_id': lease_id,
-            'user_id': user_id # Passed from the session in scan_document
+            'utility_id': utility_id, # NEW: utility_id added here
+            'user_id': user_id
         }
         
         # Remove None values
@@ -247,6 +244,32 @@ def setup_rls_policies():
     except Exception as e:
         print(f"Error setting up RLS policies: {e}")
         return False
+
+def search_utility_by_account(account_number, user_id):
+    """
+    Searches the utility table for a matching account_number 
+    belonging to the given user. Uses the RLS-authenticated 'supabase' client.
+    """
+    if not supabase or not account_number or not user_id:
+        return None
+    
+    try:
+        # Assumes utility RLS policy allows SELECT where auth.uid() = user_id
+        result = supabase.table('utility').select('id').eq('account_number', account_number).execute()
+        
+        if result.data and len(result.data) > 0:
+            # Return the first matching utility ID
+            return result.data[0]['id']
+        
+        return None
+        
+    except APIError as e:
+        # Catch RLS errors on utility table or other API failures
+        print(f"RLS/API Error during utility search: {e.message}")
+        return None
+    except Exception as e:
+        print(f"Error during utility search: {e}")
+        return None
 
 @app.route('/')
 def index():
@@ -335,6 +358,14 @@ def scan_document():
         extracted_text = result.document.export_to_markdown()
         bill_info = extract_bill_info(extracted_text)
 
+        utility_id_found = None
+        account_number = bill_info.get('account_number')
+        
+        if account_number:
+            utility_id_found = search_utility_by_account(account_number, user_id_from_session)
+        
+        bill_info['utility_id_match'] = utility_id_found
+
         # --- 3. UPLOAD TO SUPABASE STORAGE ---
         # Use user's ID or UUID + original name for path
         unique_filename = f"{uuid.uuid4()}-{original_filename}"
@@ -365,7 +396,8 @@ def scan_document():
             document_type=document_type,
             property_id=property_id,
             tenant_id=tenant_id,
-            lease_id=lease_id
+            lease_id=lease_id,
+            utility_id=utility_id_found
         )
         
         if document_id:
